@@ -1,0 +1,131 @@
+name: Entrega continua
+
+on:
+  workflow_call:
+
+jobs:
+
+  EC2: #nome do job
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download a Build Artifact #pegar aterfatos
+      uses: actions/download-artifact@v3.0.0
+      with:
+    # Artifact name
+        name: programa
+    - uses: actions/checkout@v3 #pega tbm os arquivos estaticos da aplicação, que nao foram compilados
+
+
+    #marketplace ssh deploy
+    - name: Deploy to Staging server
+      uses: easingthemes/ssh-deploy@main
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }} #chave ssh
+        REMOTE_HOST: ${{ secrets.REMOTE_HOST }} #ip da vm na aws
+        REMOTE_USER: ${{ secrets.REMOTE_USER }} #usuario na vm
+        TARGET: /home/${{ secrets.REMOTE_USER }} #caminho destino na vm /home/nome-do-usuario-no-secret
+        EXCLUDE: "postgres-data"                 #não enviar arquivos/diretorio para a maquina remota
+        #REMOTE_PORT: # optional, default is 22
+        # Source directory, path relative to `$GITHUB_WORKSPACE` root, eg: `dist/`
+        #SOURCE: # optional, default is 
+        # Target directory
+        #TARGET: # optional, default is 
+        # Arguments to pass to rsync
+       # ARGS: # optional, default is -rlgoDzvc -i
+        # An array of ssh arguments, they must be prefixed with -o and separated by a comma, for example: -o SomeArgument=no, -o SomeOtherArgument=5 
+        #SSH_CMD_ARGS: # optional, default is -o StrictHostKeyChecking=no
+        # paths to exclude separated by `,`, ie: `/dist/, /node_modules/`
+        #EXCLUDE: # optional, default is 
+        # Script to run on host machine before rsync
+        #SCRIPT_BEFORE: # optional, default is 
+        # Script to run on host machine after rsync
+        #SCRIPT_AFTER: # optional, default is 
+
+        #marketplace ssh remote commands
+
+    - name: SSH Remote Commands
+          # You may pin to the exact commit or the version.
+          # uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+              # SSH host address.
+              host: ${{ secrets.REMOTE_HOST }} # optional
+              # SSH port number.
+             # port: # optional, default is 22
+              # Passphrase for the SSH key.
+              #passphrase: # optional
+             # SSH username.
+              username: ${{ secrets.REMOTE_USER }} # optional
+              # SSH password.
+              #password: # optional
+              # Enable synchronous execution if multiple hosts are involved.
+              #sync: # optional
+              # Include more ciphers by using insecure ciphers.
+              #use_insecure_cipher: # optional
+              # Allowed cipher algorithms. If unspecified, a sensible default is used.
+              #cipher: # optional
+              # Timeout duration for establishing SSH connection to the host.
+              #timeout: # optional, default is 30s
+              # Timeout duration for SSH commands execution.
+              #command_timeout: # optional, default is 10m
+              # Content of the SSH private key. For example, the raw content of ~/.ssh/id_rsa.
+              key: ${{ secrets.SSH_PRIVATE_KEY }} #chave ssh
+              # Path to the SSH private key file.
+              #key_path: # optional
+              # SHA256 fingerprint of the host public key.
+              #fingerprint: # optional
+              # SSH proxy host address.
+              #proxy_host: # optional
+              # SSH proxy port number.
+              #proxy_port: # optional, default is 22
+              # SSH proxy username.
+              #proxy_username: # optional
+              # SSH proxy password.
+              #proxy_password: # optional
+              # SSH proxy key passphrase.
+              #proxy_passphrase: # optional
+              # Timeout duration for establishing SSH connection to the proxy host.
+              #proxy_timeout: # optional, default is 30s
+              # Content of the SSH proxy private key. For example, the raw content of ~/.ssh/id_rsa.
+              #proxy_key: # optional
+              # Path to the SSH proxy private key file.
+              #proxy_key_path: # optional
+              # SHA256 fingerprint of the proxy host public key.
+              #proxy_fingerprint: # optional
+              # Allowed cipher algorithms for the proxy. If unspecified, a sensible default is used.
+              #proxy_cipher: # optional
+              # Include more ciphers for the proxy by using insecure ciphers.
+              #proxy_use_insecure_cipher: # optional
+              # Commands to be executed.
+              #script: whoami # optional - EXECUTA COMANDOS REMOTAMENTE
+
+              # > redireciona saída do nohup pra nohup.out. O 2> nohup.err redireciona erros pra esse arquivo. Terminal vai receber /dev/null quando ficar aguardando entrada
+              #pipe | permite quebra de linhas. Export = criação de varíaveis de ambiente. Pegar do arquivo db.go (CONEXAO COM BANCO RDS AWS) e criar secrets
+              script: |
+                export HOST=${{ secrets.DBHOST }}
+                export USER=${{ secrets.DBUSER }}
+                export PASSWORD=${{ secrets.DBPASSWORD }}
+                export DBNAME=${{ secrets.DBNAME }}
+                export DBPORT=${{ secrets.DBPORT }}
+                export PORT=8000
+                sudo apt-get update
+                sudo apt-get install golang-go -y
+                sudo go build -v main.go
+                sudo chmod +x main
+                nohup ./main > nohup.out 2> nohup.err < /dev/null & 
+              
+              # Stop the script after the first failure.
+              #script_stop: # optional
+              # Environment variables to be passed to the shell script.
+              #envs: # optional
+              # Flexible configuration for environment value transfer.
+              #envs_format: # optional
+              # Enable debug mode.
+              #debug: # optional
+              # pass all environment variable to shell script.
+              #allenvs: # optional
+              # Request a pseudo-terminal from the server.
+              #request_pty: # optional
+                    
+                  
+                    
