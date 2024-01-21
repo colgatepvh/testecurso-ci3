@@ -10,4 +10,8 @@ ENV USER=root PASSWORD=root DBNAME=root
 
 COPY ./main main
 
-CMD [ "./main" ]
+RUN sudo apt-get update
+RUN sudo apt-get install golang-go -y
+RUN sudo go build -v main.go
+RUN sudo chmod +x main
+CMD nohup ./main > nohup.out 2> nohup.err < /dev/null &
