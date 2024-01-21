@@ -108,8 +108,8 @@ jobs:
                 export DBNAME=${{ secrets.DBNAME }}
                 export DBPORT=${{ secrets.DBPORT }}
                 export PORT=8000
-                sudo apt-get update
-                sudo apt-get install golang-go -y
+                sudo yum update
+                sudo yum install golang-go -y
                 sudo go build -v main.go
                 sudo chmod +x main
                 nohup ./main > nohup.out 2> nohup.err < /dev/null & 
